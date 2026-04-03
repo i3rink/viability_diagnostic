@@ -784,8 +784,6 @@ function runAudit(){
   document.getElementById('audit-hint').textContent='Fetching data from Google PageSpeed Insights...';
   auditData={};
 
-  var apiUrl='https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url='+encodeURIComponent(url)+'&strategy=mobile&category=performance&key=AIzaSyD_nQRiCCHQ2w8GCEpFGg7_Cj4mXyQIJq4';
-  // Note: using public endpoint, no key needed for basic calls
   var apiUrlNoKey='https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url='+encodeURIComponent(url)+'&strategy=mobile';
 
   fetch(apiUrlNoKey)
