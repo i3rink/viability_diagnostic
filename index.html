@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMS — PPC Viability Diagnostic</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;
+  --surface:#1a1d27;
+  --card:#20232f;
+  --border:#2e3244;
+  --border2:#3a3f58;
+  --text:#e8eaf0;
+  --muted:#7b80a0;
+  --accent:#4f8ef7;
+  --accent2:#7c5cfc;
+  --green:#22c55e;
+  --green-dim:#16a34a22;
+  --amber:#f59e0b;
+  --amber-dim:#f59e0b22;
+  --red:#ef4444;
+  --red-dim:#ef444422;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',sans-serif;
+  --radius:10px;
+  --radius-lg:14px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* LOCK */
+#lock-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+.lock-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem 2rem;width:100%;max-width:340px;text-align:center}
+.lock-logo{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem}
+.lock-box h2{font-size:1.1rem;font-weight:600;margin-bottom:.4rem}
+.lock-box p{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem}
+.lock-input{width:100%;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;text-align:center;letter-spacing:.15em;color:var(--text);font-family:var(--mono);margin-bottom:.75rem}
+.lock-input:focus{outline:none;border-color:var(--accent)}
+.lock-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:.9rem;font-weight:600;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.lock-btn:hover{opacity:.85}
+.lock-error{font-size:.75rem;color:var(--red);margin-top:.5rem;min-height:1.1em}
+
+/* APP */
+#app{display:none;max-width:1000px;margin:0 auto;padding:1.5rem 1rem 4rem}
+
+/* HEADER */
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 0 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+.app-brand{display:flex;align-items:center;gap:10px}
+.brand-dot{width:8px;height:8px;background:var(--accent);border-radius:50%}
+.brand-name{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.app-title{font-size:1.1rem;font-weight:600;color:var(--text)}
+.header-actions{display:flex;gap:.5rem}
+.btn-ghost{padding:6px 14px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);font-size:.75rem;font-weight:500;color:var(--muted);cursor:pointer;font-family:var(--sans);transition:all .15s}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-accent{padding:6px 14px;background:var(--accent);border:none;border-radius:var(--radius);font-size:.75rem;font-weight:600;color:#fff;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.btn-accent:hover{opacity:.85}
+
+/* MODE TABS */
+.mode-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px;margin-bottom:1.5rem;width:fit-content}
+.mode-tab{padding:7px 18px;border-radius:8px;font-size:.8rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:var(--sans);transition:all .15s}
+.mode-tab.active{background:var(--card);color:var(--text);border:1px solid var(--border)}
+
+/* CALL MODE */
+#call-mode{display:none}
+.call-progress{display:flex;gap:4px;margin-bottom:2rem;align-items:center}
+.call-step-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--muted);transition:all .3s;flex-shrink:0}
+.call-step-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.call-step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.call-step-line{flex:1;height:2px;background:var(--border);transition:background .3s}
+.call-step-line.done{background:var(--green)}
+
+.call-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;max-width:580px;margin:0 auto}
+.call-step-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+.call-q{font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:.4rem;line-height:1.3}
+.call-hint{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem}
+.call-input{width:100%;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:1rem;color:var(--text);font-family:var(--sans);transition:border-color .15s}
+.call-input:focus{outline:none;border-color:var(--accent)}
+.call-input-prefix{position:relative}
+.call-input-prefix span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+.call-input-prefix input{padding-left:28px}
+.call-options{display:flex;flex-direction:column;gap:8px}
+.call-option{padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:.9rem;color:var(--text);transition:all .15s;text-align:left}
+.call-option:hover{border-color:var(--accent);color:var(--accent)}
+.call-option.selected{border-color:var(--accent);background:#4f8ef711;color:var(--accent)}
+.call-nav{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:space-between}
+.call-skip{font-size:.75rem;color:var(--muted);cursor:pointer;text-decoration:underline;align-self:center}
+
+/* FORM MODE */
+#form-mode{}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1rem}
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+.section-num{width:24px;height:24px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.section-title{font-size:.9rem;font-weight:600;color:var(--text)}
+.section-sub{font-size:.75rem;color:var(--muted);margin-left:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+@media(max-width:600px){.grid-3{grid-template-columns:1fr}}
+.field{margin-bottom:.75rem}
+.field:last-child{margin-bottom:0}
+label{display:block;font-size:.7rem;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+input[type=number],input[type=text],select{width:100%;padding:8px 11px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--sans);font-size:.875rem;color:var(--text);transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+select option{background:var(--card)}
+.prefix-wrap{position:relative}
+.prefix-wrap span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;pointer-events:none}
+.prefix-wrap input{padding-left:20px}
+.suffix-wrap{position:relative}
+.suffix-wrap span{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.8rem;pointer-events:none}
+.hint{font-size:.7rem;color:var(--muted);margin-top:3px;font-style:italic}
+.range-row{display:flex;align-items:center;gap:10px}
+.range-row input[type=range]{flex:1;accent-color:var(--accent)}
+.range-val{font-family:var(--mono);font-size:.8rem;font-weight:500;min-width:64px;text-align:right;color:var(--text)}
+.toggle-group{display:flex;gap:5px;flex-wrap:wrap}
+.toggle-btn{padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--card);font-family:var(--sans);font-size:.75rem;cursor:pointer;transition:all .15s;color:var(--muted);font-weight:500}
+.toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* URL AUDIT */
+.url-row{display:flex;gap:.5rem;margin-bottom:.75rem}
+.url-row input{flex:1}
+.audit-results{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:.75rem}
+@media(max-width:600px){.audit-results{grid-template-columns:1fr}}
+.audit-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center}
+.audit-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:4px}
+.audit-val{font-family:var(--mono);font-size:1rem;font-weight:500}
+.audit-val.good{color:var(--green)}
+.audit-val.warn{color:var(--amber)}
+.audit-val.bad{color:var(--red)}
+.audit-val.neutral{color:var(--text)}
+.audit-sub{font-size:.65rem;color:var(--muted);margin-top:2px}
+.audit-spinner{display:none;text-align:center;padding:1rem;color:var(--muted);font-size:.8rem}
+.audit-bar{display:inline-block;width:40px;height:4px;background:var(--border);border-radius:2px;position:relative;overflow:hidden;vertical-align:middle;margin-right:6px}
+.audit-bar::after{content:'';position:absolute;left:-100%;top:0;height:100%;width:100%;background:var(--accent);animation:slide 1s infinite linear}
+@keyframes slide{to{left:100%}}
+.trends-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:.75rem;color:var(--text);cursor:pointer;font-family:var(--sans);transition:all .15s;font-weight:500}
+.trends-btn:hover{border-color:var(--accent);color:var(--accent)}
+.trends-icon{width:14px;height:14px;fill:currentColor}
+
+/* COMPETITOR */
+.comp-row{display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center}
+.comp-row input{flex:1}
+.comp-tag{padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.comp-tag button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;line-height:1;padding:0}
+.comp-tag button:hover{color:var(--red)}
+.comp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:.5rem}
+.comp-add{padding:5px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:.75rem;color:var(--muted);cursor:pointer;font-family:var(--sans);transition:all .15s}
+.comp-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* RESULTS */
+.results{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:1.5rem}
+.results-head{background:var(--surface);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem}
+.results-head h2{font-size:1rem;font-weight:600}
+.verdict-badge{padding:5px 16px;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:.05em}
+.verdict-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+.verdict-amber{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber)}
+.verdict-red{background:var(--red-dim);color:var(--red);border:1px solid var(--red)}
+.verdict-na{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)}
+@media(max-width:600px){.metrics-grid{grid-template-columns:repeat(2,1fr)}}
+.metric{padding:1.25rem;border-right:1px solid var(--border);text-align:center;background:var(--card)}
+.metric:last-child{border-right:none}
+.metric-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px;font-weight:600}
+.metric-val{font-family:var(--mono);font-size:1.5rem;font-weight:500;color:var(--text)}
+.metric-val.highlight{color:var(--accent)}
+
+.breakdown{padding:1.25rem 1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;background:var(--surface)}
+@media(max-width:600px){.breakdown{grid-template-columns:1fr}}
+.breakdown-col h3{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.75rem;font-weight:700}
+.breakdown-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.breakdown-row:last-child{border-bottom:none;font-weight:600;padding-top:8px;margin-top:4px}
+.breakdown-label{color:var(--muted)}
+.breakdown-val{font-family:var(--mono);font-weight:500}
+
+.chips-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;padding:1rem 1.5rem;background:var(--card);border-top:1px solid var(--border)}
+@media(max-width:600px){.chips-row{grid-template-columns:repeat(2,1fr)}}
+.chip{text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem .5rem}
+.chip-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.chip-val{font-family:var(--mono);font-weight:600;font-size:1rem;color:var(--text);margin-top:2px}
+
+/* WHAT WOULD IT TAKE */
+.flip-panel{background:var(--card);border:1px solid var(--border);border-top:none;padding:1.25rem 1.5rem}
+.flip-panel h3{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.75rem;font-weight:700}
+.flip-items{display:flex;flex-direction:column;gap:6px}
+.flip-item{display:flex;align-items:baseline;gap:8px;font-size:.85rem;color:var(--muted)}
+.flip-val{font-family:var(--mono);font-weight:500;color:var(--amber)}
+
+/* FLAGS */
+.flags{padding:1.25rem 1.5rem;border-top:1px solid var(--border);background:var(--surface)}
+.flags h3{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.75rem;font-weight:700}
+.flag-list{display:flex;flex-direction:column;gap:5px}
+.flag{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;padding:7px 10px;border-radius:6px;line-height:1.5}
+.flag-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.flag.warn{background:#f59e0b11;color:#fbbf24}
+.flag.warn .flag-dot{background:var(--amber)}
+.flag.bad{background:#ef444411;color:#f87171}
+.flag.bad .flag-dot{background:var(--red)}
+.flag.good{background:#22c55e11;color:#4ade80}
+.flag.good .flag-dot{background:var(--green)}
+
+/* HISTORY */
+#history-panel{display:none}
+.history-empty{text-align:center;padding:3rem;color:var(--muted);font-size:.85rem}
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.history-name{font-weight:600;font-size:.9rem;flex:1;min-width:120px}
+.history-meta{font-size:.75rem;color:var(--muted)}
+.history-verdict{padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:700}
+.history-actions{display:flex;gap:.5rem;margin-left:auto}
+.btn-sm{padding:4px 10px;border-radius:6px;font-size:.7rem;font-weight:500;cursor:pointer;font-family:var(--sans);border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .15s}
+.btn-sm:hover{color:var(--text);border-color:var(--border2)}
+.btn-sm.danger:hover{color:var(--red);border-color:var(--red)}
+
+/* PRINT */
+@media print{
+  #lock-screen,#app>.app-header .header-actions,.mode-tabs,.url-audit-btn,.trends-btn,.comp-add,#history-panel,.call-nav,.btn-ghost,.btn-accent{display:none!important}
+  body{background:#fff;color:#000}
+  .results{border-color:#ccc}
+  .section,.results-head,.metric,.breakdown,.flags,.chips-row,.flip-panel{background:#fff!important;color:#000!important}
+  .metric-val,.breakdown-val,.chip-val,.range-val,.flip-val{color:#000!important}
+  .section-num{background:#1a1a2e!important}
+  label,.breakdown-label,.section-sub,.hint,.muted{color:#555!important}
+  input,select{border-color:#ccc!important;background:#f9f9f9!important;color:#000!important}
+  .verdict-green{background:#d1fae5!important;color:#065f46!important}
+  .verdict-amber{background:#fef3c7!important;color:#92400e!important}
+  .verdict-red{background:#fee2e2!important;color:#991b1b!important}
+  .flag.good{background:#f0fdf4!important;color:#166534!important}
+  .flag.warn{background:#fffbeb!important;color:#92400e!important}
+  .flag.bad{background:#fef2f2!important;color:#991b1b!important}
+}
+</style>
+</head>
+<body>
+
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-logo">Digital Marketing Scotland</div>
+    <h2>Internal Tool</h2>
+    <p>Enter your password to access the PPC Viability Diagnostic.</p>
+    <input type="password" class="lock-input" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="lock-btn" onclick="checkPw()">Unlock</button>
+    <div class="lock-error" id="pw-error"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="app-header">
+    <div>
+      <div class="app-brand"><div class="brand-dot"></div><div class="brand-name">Digital Marketing Scotland</div></div>
+      <div class="app-title">PPC Viability Diagnostic</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-ghost" onclick="showHistory()">Past Assessments</button>
+      <button class="btn-ghost" onclick="clearAll()">Clear</button>
+      <button class="btn-accent" onclick="saveAssessment()">Save Assessment</button>
+      <button class="btn-ghost" onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('call')">Call Mode</button>
+    <button class="mode-tab" onclick="setMode('form')">Full Form</button>
+    <button class="mode-tab" onclick="setMode('history')">History</button>
+  </div>
+
+  <!-- CALL MODE -->
+  <div id="call-mode">
+    <div class="call-progress" id="call-progress"></div>
+    <div class="call-card" id="call-card"></div>
+  </div>
+
+  <!-- FORM MODE -->
+  <div id="form-mode">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">1</div>
+        <div class="section-title">Client Details</div>
+        <div class="section-sub">For saving & reports</div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Client / Business Name</label>
+          <input type="text" id="client-name" placeholder="e.g. Pristine Bathrooms" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>Business Type / Niche</label>
+          <input type="text" id="niche" placeholder="e.g. Bathroom installation" oninput="updateTrends()">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">2</div>
+        <div class="section-title">Website URL Audit</div>
+        <div class="section-sub">Paste client URL to assess landing page readiness</div>
+      </div>
+      <div class="url-row">
+        <input type="text" id="url-input" placeholder="https://www.example.com" onkeydown="if(event.key==='Enter')runAudit()">
+        <button class="btn-accent" onclick="runAudit()">Run Audit</button>
+        <button class="trends-btn" id="trends-btn" onclick="openTrends()" title="Open Google Trends">
+          <svg class="trends-icon" viewBox="0 0 24 24"><path d="M22 12l-4-4-6 6-4-4L2 16"/><polyline points="22 12 22 18 16 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Trends
+        </button>
+      </div>
+      <div class="audit-spinner" id="audit-spinner"><span class="audit-bar"></span>Auditing page...</div>
+      <div class="audit-results" id="audit-results" style="display:none">
+        <div class="audit-card">
+          <div class="audit-label">Page Speed</div>
+          <div class="audit-val" id="a-speed">—</div>
+          <div class="audit-sub" id="a-speed-sub"></div>
+        </div>
+        <div class="audit-card">
+          <div class="audit-label">Mobile Score</div>
+          <div class="audit-val" id="a-mobile">—</div>
+          <div class="audit-sub" id="a-mobile-sub"></div>
+        </div>
+        <div class="audit-card">
+          <div class="audit-label">Contact Form</div>
+          <div class="audit-val" id="a-form">—</div>
+          <div class="audit-sub" id="a-form-sub"></div>
+        </div>
+        <div class="audit-card">
+          <div class="audit-label">Tracking Detected</div>
+          <div class="audit-val" id="a-tracking">—</div>
+          <div class="audit-sub" id="a-tracking-sub"></div>
+        </div>
+        <div class="audit-card">
+          <div class="audit-label">Landing Page Score</div>
+          <div class="audit-val" id="a-lpscore">—</div>
+          <div class="audit-sub" id="a-lpscore-sub"></div>
+        </div>
+        <div class="audit-card">
+          <div class="audit-label">Domain Age</div>
+          <div class="audit-val" id="a-age">—</div>
+          <div class="audit-sub" id="a-age-sub"></div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:.5rem" id="audit-hint">Uses Google PageSpeed Insights API (free). Results inform conversion rate estimate.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">3</div>
+        <div class="section-title">Our Fees</div>
+        <div class="section-sub">Fixed &amp; variable</div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Setup Fee</label>
+          <div class="prefix-wrap"><span>£</span><input type="number" id="setup" value="895" min="0" oninput="calc()"></div>
+        </div>
+        <div class="field">
+          <label>Monthly Management Fee</label>
+          <div class="prefix-wrap"><span>£</span><input type="number" id="mgmt" value="1200" min="0" oninput="calc()"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">4</div>
+        <div class="section-title">Client Ad Budget</div>
+        <div class="section-sub">Monthly media spend</div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Monthly Ad Budget</label>
+          <div class="prefix-wrap"><span>£</span><input type="number" id="budget" value="1000" min="50" oninput="calc()"></div>
+          <div class="hint" id="budget-hint"></div>
+        </div>
+        <div class="field">
+          <label>Total Monthly Client Outlay (incl. setup ÷12)</label>
+          <div class="prefix-wrap" style="opacity:.5"><span>£</span><input type="number" id="total-outlay" readonly tabindex="-1" style="cursor:default"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">5</div>
+        <div class="section-title">SEMrush Data</div>
+        <div class="section-sub">Pull before the call</div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Monthly Search Volume (national)</label>
+          <input type="number" id="volume" value="2000" min="0" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>Avg. Cost Per Click</label>
+          <div class="prefix-wrap"><span>£</span><input type="number" id="cpc" value="2.50" min="0.01" step="0.10" oninput="calc()"></div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Quality Score (1–10)</label>
+          <div class="range-row">
+            <input type="range" min="1" max="10" step="1" id="qs" value="6" oninput="calc()">
+            <span class="range-val" id="qs-out">6 / 10</span>
+          </div>
+          <div class="hint" id="qs-hint">Average — no significant CPC impact</div>
+        </div>
+        <div class="field">
+          <label>Competition Level</label>
+          <select id="competition" onchange="calc()">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Geo Targeting</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" data-geo="national" onclick="setGeo(this)">National</button>
+          <button class="toggle-btn active" data-geo="regional" onclick="setGeo(this)">Regional</button>
+          <button class="toggle-btn" data-geo="local" onclick="setGeo(this)">Local / single city</button>
+        </div>
+        <div class="hint" id="geo-hint">Regional: est. 30% of national volume</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">6</div>
+        <div class="section-title">Competitor Snapshot</div>
+        <div class="section-sub">Who are they up against?</div>
+      </div>
+      <div class="comp-row">
+        <input type="text" id="comp-input" placeholder="Add a competitor name" onkeydown="if(event.key==='Enter')addComp()">
+        <button class="comp-add" onclick="addComp()">+ Add</button>
+      </div>
+      <div class="comp-tags" id="comp-tags"></div>
+      <div class="hint" style="margin-top:.5rem">Adding competitors informs the competition level and flags domain authority risks.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">7</div>
+        <div class="section-title">Campaign Setup</div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Landing Page Status</label>
+          <select id="lp" onchange="lpChanged()">
+            <option value="dedicated">Dedicated landing page (we build)</option>
+            <option value="existing" selected>Existing relevant service page</option>
+            <option value="homepage">Homepage only — needs redirecting</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Click-through Rate (CTR)</label>
+          <div class="range-row">
+            <input type="range" min="1" max="12" step="0.5" id="ctr" value="4" oninput="calc()">
+            <span class="range-val" id="ctr-out">4%</span>
+          </div>
+          <div class="hint">Local services avg: 3–6%</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Conversion Rate (clicks to leads)</label>
+          <div class="range-row">
+            <input type="range" min="0.5" max="10" step="0.5" id="cvr" value="3" oninput="calc()">
+            <span class="range-val" id="cvr-out">3%</span>
+          </div>
+          <div class="hint" id="cvr-hint">Good landing page: 2–5%. Homepage: often under 1%</div>
+        </div>
+        <div class="field">
+          <label>Brand vs Non-Brand Split</label>
+          <div class="range-row">
+            <input type="range" min="0" max="100" step="10" id="brandsplit" value="20" oninput="calc()">
+            <span class="range-val" id="brand-out">20% brand</span>
+          </div>
+          <div class="hint">Brand terms ~40% cheaper than conquest</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">8</div>
+        <div class="section-title">Client Business Metrics</div>
+        <div class="section-sub">Revenue potential calculation</div>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Average Job Value</label>
+          <div class="prefix-wrap"><span>£</span><input type="number" id="aov" value="1500" min="0" oninput="calc()"></div>
+        </div>
+        <div class="field">
+          <label>Lead Close Rate</label>
+          <div class="suffix-wrap"><input type="number" id="close" value="30" min="1" max="100" oninput="calc()"><span>%</span></div>
+        </div>
+        <div class="field">
+          <label>Target Cost Per Lead</label>
+          <div class="prefix-wrap"><span>£</span><input type="number" id="target-cpl" value="80" min="0" oninput="calc()"></div>
+          <div class="hint">Client's acceptable CPL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results" id="results">
+      <div class="results-head">
+        <div>
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:3px">Viability Assessment</div>
+          <div style="font-size:1rem;font-weight:600" id="r-clientname">—</div>
+        </div>
+        <span class="verdict-badge verdict-na" id="verdict-badge">Enter data above</span>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-label">Est. clicks / month</div><div class="metric-val highlight" id="r-clicks">—</div></div>
+        <div class="metric"><div class="metric-label">Est. leads / month</div><div class="metric-val highlight" id="r-leads">—</div></div>
+        <div class="metric"><div class="metric-label">Cost per lead</div><div class="metric-val highlight" id="r-cpl">—</div></div>
+        <div class="metric"><div class="metric-label">Revenue potential</div><div class="metric-val highlight" id="r-rev">—</div></div>
+      </div>
+      <div class="breakdown">
+        <div class="breakdown-col">
+          <h3>Monthly economics</h3>
+          <div class="breakdown-row"><span class="breakdown-label">Ad budget</span><span class="breakdown-val" id="b-budget">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Management fee</span><span class="breakdown-val" id="b-mgmt">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Setup (÷12)</span><span class="breakdown-val" id="b-setup">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Total monthly outlay</span><span class="breakdown-val" id="b-total">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Net monthly return</span><span class="breakdown-val" id="b-net">—</span></div>
+        </div>
+        <div class="breakdown-col">
+          <h3>Traffic model</h3>
+          <div class="breakdown-row"><span class="breakdown-label">Adjusted search volume</span><span class="breakdown-val" id="b-vol">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">QS-adjusted CPC</span><span class="breakdown-val" id="b-cpc">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Clicks from budget</span><span class="breakdown-val" id="b-clicks-b">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Clicks from volume</span><span class="breakdown-val" id="b-clicks-v">—</span></div>
+          <div class="breakdown-row"><span class="breakdown-label">Effective clicks</span><span class="breakdown-val" id="b-eff">—</span></div>
+        </div>
+      </div>
+      <div class="chips-row">
+        <div class="chip"><div class="chip-label">Setup payback</div><div class="chip-val" id="r-payback">—</div></div>
+        <div class="chip"><div class="chip-label">Monthly ROI</div><div class="chip-val" id="r-roi">—</div></div>
+        <div class="chip"><div class="chip-label">Break-even leads</div><div class="chip-val" id="r-breakeven">—</div></div>
+        <div class="chip"><div class="chip-label">CPL vs target</div><div class="chip-val" id="r-cpltarget">—</div></div>
+      </div>
+      <div class="flip-panel" id="flip-panel" style="display:none">
+        <h3>What would it take to make this viable?</h3>
+        <div class="flip-items" id="flip-items"></div>
+      </div>
+      <div class="flags">
+        <h3>Flags &amp; considerations</h3>
+        <div class="flag-list" id="flag-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /form-mode -->
+
+  <!-- HISTORY -->
+  <div id="history-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:.9rem;font-weight:600">Saved Assessments</div>
+      <button class="btn-ghost" onclick="clearHistory()" style="color:var(--red);border-color:var(--red)">Clear all</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── AUTH ──────────────────────────────────────────────────────────────
+(function(){
+  if(sessionStorage.getItem('dms_ppc_v2')==='1'){unlock();}
+  window.checkPw=function(){
+    var v=document.getElementById('pw-input').value;
+    if(v==='Celtic1888'){sessionStorage.setItem('dms_ppc_v2','1');unlock();}
+    else{document.getElementById('pw-error').textContent='Incorrect password.';document.getElementById('pw-input').value='';}
+  };
+  function unlock(){
+    document.getElementById('lock-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initCallMode();
+    calc();
+    renderHistory();
+  }
+})();
+
+// ── GLOBALS ───────────────────────────────────────────────────────────
+var geoMod=0.3;
+var competitors=[];
+var auditData={};
+var currentMode='call';
+
+// ── MODE SWITCHING ────────────────────────────────────────────────────
+function setMode(m){
+  currentMode=m;
+  document.querySelectorAll('.mode-tab').forEach(function(t,i){
+    t.classList.toggle('active',['call','form','history'][i]===m);
+  });
+  document.getElementById('call-mode').style.display=m==='call'?'block':'none';
+  document.getElementById('form-mode').style.display=m==='form'?'block':'none';
+  document.getElementById('history-panel').style.display=m==='history'?'block':'none';
+  if(m==='history')renderHistory();
+}
+function showHistory(){setMode('history');}
+
+// ── CALL MODE ─────────────────────────────────────────────────────────
+var callStep=0;
+var callAnswers={};
+var callSteps=[
+  {id:'client-name',q:"What's the business name?",hint:'First things first.',type:'text',placeholder:'e.g. Acme Plumbing Ltd'},
+  {id:'niche',q:"What do they do?",hint:'Their main product or service — be specific.',type:'text',placeholder:'e.g. Emergency plumber, Glasgow'},
+  {id:'aov',q:"What's their average job value?",hint:'Rough figure is fine. This drives the whole revenue model.',type:'currency',placeholder:'1500'},
+  {id:'close',q:"What percentage of enquiries do they close?",hint:'If they don\'t know, 30% is a reasonable starting point.',type:'percent',placeholder:'30',options:['10% — low close rate','25% — below average','30% — average','50% — strong closer','70%+ — excellent']},
+  {id:'budget',q:"What monthly budget are they thinking?",hint:'Minimum we\'d recommend is £700. Below that the numbers get difficult.',type:'currency',placeholder:'1000',options:['£500','£750','£1,000','£1,500','£2,000+']},
+  {id:'volume',q:"What's the monthly search volume from SEMrush?",hint:'National figure — we\'ll apply the geo modifier.',type:'number',placeholder:'2000'},
+  {id:'cpc',q:"What\'s the average CPC from SEMrush?",hint:'Per click cost for their main keywords.',type:'currency',placeholder:'2.50'},
+  {id:'lp',q:"Does the website have a relevant landing page?",hint:'This significantly affects conversion rate.',type:'select',options:['Dedicated landing page (we build)','Existing relevant service page','Homepage only — needs work']}
+];
+
+function initCallMode(){
+  callStep=0;
+  renderCallStep();
+}
+
+function renderCallProgress(){
+  var p=document.getElementById('call-progress');
+  p.innerHTML='';
+  callSteps.forEach(function(s,i){
+    var dot=document.createElement('div');
+    dot.className='call-step-dot'+(i<callStep?' done':i===callStep?' active':'');
+    dot.textContent=i+1;
+    p.appendChild(dot);
+    if(i<callSteps.length-1){
+      var line=document.createElement('div');
+      line.className='call-step-line'+(i<callStep?' done':'');
+      p.appendChild(line);
+    }
+  });
+}
+
+function renderCallStep(){
+  renderCallProgress();
+  var card=document.getElementById('call-card');
+  if(callStep>=callSteps.length){
+    syncCallToForm();
+    card.innerHTML='<div style="text-align:center;padding:2rem"><div style="font-size:2rem;margin-bottom:1rem">Done</div><div style="color:var(--muted);font-size:.9rem;margin-bottom:1.5rem">Assessment complete. Switching to results.</div><button class="btn-accent" onclick="setMode(\'form\')">View Full Results</button></div>';
+    calc();
+    return;
+  }
+  var s=callSteps[callStep];
+  var stepId=s.id;
+  var saved=callAnswers[stepId]||'';
+  var html='<div class="call-step-label">Question '+(callStep+1)+' of '+callSteps.length+'</div>';
+  html+='<div class="call-q">'+s.q+'</div>';
+  html+='<div class="call-hint">'+s.hint+'</div>';
+
+  if(s.options&&s.type==='select'){
+    html+='<div class="call-options" id="call-opts">';
+    s.options.forEach(function(o){
+      var sel=saved===o?' selected':'';
+      html+='<button class="call-option'+sel+'" data-raw="'+o.replace(/"/g,'&quot;')+'">'+o+'</button>';
+    });
+    html+='</div>';
+  } else if(s.options){
+    html+='<div class="call-options" id="call-opts">';
+    s.options.forEach(function(o){
+      var raw=o.replace(/[^0-9.]/g,'');
+      var sel=saved===raw?' selected':'';
+      html+='<button class="call-option'+sel+'" data-raw="'+raw+'">'+o+'</button>';
+    });
+    html+='</div>';
+    html+='<div style="margin-top:.75rem;font-size:.75rem;color:var(--muted)">Or type a custom value:</div>';
+    if(s.type==='currency'){html+='<div class="call-input-prefix" style="margin-top:.35rem"><span>£</span><input class="call-input" id="call-custom" style="padding-left:28px" type="number" value="'+saved+'" placeholder="'+s.placeholder+'"></div>';}
+    else{html+='<input class="call-input" id="call-custom" type="number" value="'+saved+'" placeholder="'+s.placeholder+'" style="margin-top:.35rem">';}
+  } else {
+    if(s.type==='currency'){html+='<div class="call-input-prefix"><span>£</span><input class="call-input" id="call-inp" type="number" style="padding-left:28px" value="'+saved+'" placeholder="'+s.placeholder+'"></div>';}
+    else if(s.type==='percent'){html+='<div style="position:relative"><input class="call-input" id="call-inp" type="number" value="'+saved+'" placeholder="'+s.placeholder+'" style="padding-right:28px"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted)">%</span></div>';}
+    else{html+='<input class="call-input" id="call-inp" type="text" value="'+saved+'" placeholder="'+s.placeholder+'">';}
+  }
+
+  html+='<div class="call-nav">';
+  html+=callStep>0?'<button class="btn-ghost" id="call-back-btn">Back</button>':'<div></div>';
+  html+='<button class="btn-accent" id="call-next-btn">'+(callStep===callSteps.length-1?'Finish':'Next')+'</button>';
+  html+='</div>';
+
+  card.innerHTML=html;
+
+  var inp=document.getElementById('call-inp');
+  var custom=document.getElementById('call-custom');
+  var opts=document.getElementById('call-opts');
+  var nextBtn=document.getElementById('call-next-btn');
+  var backBtn=document.getElementById('call-back-btn');
+
+  if(inp){
+    inp.addEventListener('input',function(){callAnswers[stepId]=this.value;});
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')nextCallStep();});
+    setTimeout(function(){inp.focus();},50);
+  }
+  if(custom){
+    custom.addEventListener('input',function(){callAnswers[stepId]=this.value;});
+  }
+  if(opts){
+    opts.addEventListener('click',function(e){
+      var btn=e.target.closest('.call-option');
+      if(!btn)return;
+      opts.querySelectorAll('.call-option').forEach(function(b){b.classList.remove('selected');});
+      btn.classList.add('selected');
+      callAnswers[stepId]=btn.dataset.raw;
+      if(custom)custom.value=btn.dataset.raw;
+    });
+  }
+  if(nextBtn)nextBtn.addEventListener('click',nextCallStep);
+  if(backBtn)backBtn.addEventListener('click',prevCallStep);
+}
+
+function nextCallStep(){
+  var s=callSteps[callStep];
+  var inp=document.getElementById('call-inp');
+  if(inp&&inp.value)callAnswers[s.id]=inp.value;
+  callStep++;
+  renderCallStep();
+}
+function prevCallStep(){callStep=Math.max(0,callStep-1);renderCallStep();}
+
+
+function syncCallToForm(){
+  var map={
+    'client-name':'client-name','niche':'niche','aov':'aov',
+    'close':'close','budget':'budget','volume':'volume','cpc':'cpc'
+  };
+  Object.keys(map).forEach(function(k){
+    var el=document.getElementById(map[k]);
+    if(el&&callAnswers[k])el.value=callAnswers[k];
+  });
+  if(callAnswers['lp']){
+    var lpEl=document.getElementById('lp');
+    var v=callAnswers['lp'];
+    if(v.indexOf('Dedicated')>-1)lpEl.value='dedicated';
+    else if(v.indexOf('Homepage')>-1)lpEl.value='homepage';
+    else lpEl.value='existing';
+  }
+}
+
+// ── GEO ───────────────────────────────────────────────────────────────
+function setGeo(btn){
+  document.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var g=btn.dataset.geo;
+  var h='';
+  if(g==='national'){geoMod=1;h='National: full search volume';}
+  else if(g==='regional'){geoMod=0.3;h='Regional: est. 30% of national volume';}
+  else{geoMod=0.08;h='Local / single city: est. 8% of national volume';}
+  document.getElementById('geo-hint').textContent=h;
+  calc();
+}
+
+// ── COMPETITORS ───────────────────────────────────────────────────────
+function addComp(){
+  var inp=document.getElementById('comp-input');
+  var v=inp.value.trim();
+  if(!v)return;
+  if(competitors.indexOf(v)===-1){competitors.push(v);renderComps();}
+  inp.value='';
+  calc();
+}
+function removeComp(i){competitors.splice(i,1);renderComps();calc();}
+function renderComps(){
+  var c=document.getElementById('comp-tags');
+  c.innerHTML='';
+  competitors.forEach(function(comp,i){
+    var d=document.createElement('div');
+    d.className='comp-tag';
+    d.innerHTML=comp+'<button onclick="removeComp('+i+')" title="Remove">×</button>';
+    c.appendChild(d);
+  });
+}
+
+// ── URL AUDIT ─────────────────────────────────────────────────────────
+function runAudit(){
+  var url=document.getElementById('url-input').value.trim();
+  if(!url)return;
+  if(!url.startsWith('http'))url='https://'+url;
+  document.getElementById('audit-spinner').style.display='block';
+  document.getElementById('audit-results').style.display='none';
+  document.getElementById('audit-hint').textContent='Fetching data from Google PageSpeed Insights...';
+  auditData={};
+
+  var apiUrl='https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url='+encodeURIComponent(url)+'&strategy=mobile&category=performance&key=AIzaSyD_nQRiCCHQ2w8GCEpFGg7_Cj4mXyQIJq4';
+  // Note: using public endpoint, no key needed for basic calls
+  var apiUrlNoKey='https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url='+encodeURIComponent(url)+'&strategy=mobile';
+
+  fetch(apiUrlNoKey)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var cats=data.lighthouseResult&&data.lighthouseResult.categories;
+      var audits=data.lighthouseResult&&data.lighthouseResult.audits;
+      var perf=cats&&cats.performance?Math.round(cats.performance.score*100):null;
+      auditData.perfScore=perf;
+
+      // Mobile score from mobile run
+      var mobileScore=perf; // same run is mobile strategy
+
+      // Check for form presence
+      var formEl=audits&&audits['uses-passive-event-listeners'];
+      var hasForm=data.lighthouseResult&&data.lighthouseResult.finalUrl;
+
+      // Tracking: check for GA/GTM in page source via a separate fetch
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+        .then(function(r2){return r2.json();})
+        .then(function(d2){
+          var src=d2.contents||'';
+          var hasGA=src.indexOf('google-analytics.com')>-1||src.indexOf('gtag')>-1||src.indexOf('UA-')>-1||src.indexOf('G-')>-1;
+          var hasGTM=src.indexOf('googletagmanager.com')>-1||src.indexOf('GTM-')>-1;
+          var hasCF=src.indexOf('contact-form')>-1||src.indexOf('wpcf7')>-1||src.indexOf('<form')>-1||src.indexOf('contactform')>-1;
+          var hasPhone=(/\b0[0-9]{10}\b|\b\+44[0-9]{10}\b/.test(src));
+          var hasServicePage=src.indexOf('service')>-1||src.indexOf('product')>-1||src.indexOf('solution')>-1;
+          auditData.hasGA=hasGA;auditData.hasGTM=hasGTM;auditData.hasForm=hasCF||hasPhone;
+          showAuditResults(perf,mobileScore,hasCF||hasPhone,hasGA||hasGTM,src,url);
+        }).catch(function(){showAuditResults(perf,mobileScore,null,null,'',url);});
+    })
+    .catch(function(){
+      document.getElementById('audit-spinner').style.display='none';
+      document.getElementById('audit-hint').textContent='Could not reach PageSpeed API. Check the URL and try again.';
+    });
+}
+
+function showAuditResults(perf,mobile,hasForm,hasTracking,src,url){
+  document.getElementById('audit-spinner').style.display='none';
+  document.getElementById('audit-results').style.display='grid';
+
+  var speedClass=perf>=80?'good':perf>=50?'warn':'bad';
+  var speedLabel=perf>=80?'Good':perf>=50?'Needs work':'Poor';
+  setAudit('a-speed',perf!=null?perf+'/100':'N/A',speedClass,speedLabel);
+
+  var mobClass=mobile>=80?'good':mobile>=50?'warn':'bad';
+  setAudit('a-mobile',mobile!=null?mobile+'/100':'N/A',mobClass,mobile>=80?'Mobile friendly':mobile>=50?'Needs improvement':'Poor mobile experience');
+
+  if(hasForm!=null){setAudit('a-form',hasForm?'Detected':'Not found',hasForm?'good':'warn',hasForm?'Form or phone number present':'May need contact method added');}
+  else{setAudit('a-form','Unknown','neutral','Could not scan page source');}
+
+  if(hasTracking!=null){setAudit('a-tracking',hasTracking?'Detected':'Not found',hasTracking?'good':'warn',hasTracking?'GA or GTM present':'No tracking found — conversion data will be limited');}
+  else{setAudit('a-tracking','Unknown','neutral','');}
+
+  // Landing page score
+  var lpScore=0;
+  if(perf>=80)lpScore+=2;else if(perf>=50)lpScore+=1;
+  if(mobile>=80)lpScore+=2;else if(mobile>=50)lpScore+=1;
+  if(hasForm)lpScore+=2;
+  if(hasTracking)lpScore+=1;
+  if(src.indexOf('service')>-1||src.indexOf('product')>-1)lpScore+=1;
+  var lpMax=8;
+  var lpPct=Math.round((lpScore/lpMax)*100);
+  var lpClass=lpPct>=70?'good':lpPct>=40?'warn':'bad';
+  var lpLabel=lpPct>=70?'Ready to use':lpPct>=40?'Needs improvement':'Not suitable — build recommended';
+  setAudit('a-lpscore',lpPct+'%',lpClass,lpLabel);
+  auditData.lpScore=lpPct;
+
+  // Domain age — estimate from source clues
+  var yearMatch=src.match(/copyright\s*(?:©|&copy;)?\s*(\d{4})/i)||src.match(/\b(200[0-9]|201[0-9]|202[0-2])\b/);
+  if(yearMatch){
+    var yr=parseInt(yearMatch[1]);
+    var age=new Date().getFullYear()-yr;
+    if(age<0)age=0;
+    setAudit('a-age',age>0?age+' yrs est.':'Unknown','neutral',age>=3?'Established domain':'Newer domain — may have lower trust');
+  } else {
+    setAudit('a-age','Unknown','neutral','Could not determine');
+  }
+
+  // Auto-adjust CVR based on LP score
+  if(lpPct>=70){document.getElementById('cvr').value=4;document.getElementById('cvr-out').textContent='4%';}
+  else if(lpPct>=40){document.getElementById('cvr').value=2;document.getElementById('cvr-out').textContent='2%';}
+  else{document.getElementById('cvr').value=1;document.getElementById('cvr-out').textContent='1%';}
+
+  // Auto-set LP field
+  if(lpPct<40){document.getElementById('lp').value='homepage';}
+  else if(lpPct>=70){document.getElementById('lp').value='existing';}
+
+  document.getElementById('audit-hint').textContent='Audit complete. Conversion rate and landing page fields have been updated based on results.';
+  calc();
+}
+
+function setAudit(id,val,cls,sub){
+  document.getElementById(id).textContent=val;
+  document.getElementById(id).className='audit-val '+cls;
+  var subEl=document.getElementById(id+'-sub');
+  if(subEl)subEl.textContent=sub||'';
+}
+
+// ── GOOGLE TRENDS ─────────────────────────────────────────────────────
+function openTrends(){
+  var niche=document.getElementById('niche').value||'';
+  var loc='GB';
+  var q=encodeURIComponent(niche);
+  window.open('https://trends.google.com/trends/explore?q='+q+'&geo='+loc+'&hl=en-GB','_blank');
+}
+function updateTrends(){}
+
+// ── LP CHANGE ─────────────────────────────────────────────────────────
+function lpChanged(){
+  var v=document.getElementById('lp').value;
+  var cvr=document.getElementById('cvr');
+  var hint=document.getElementById('cvr-hint');
+  if(v==='homepage'){cvr.value=1;hint.textContent='Homepage: expect under 1–2% conversion rate';}
+  else if(v==='dedicated'){hint.textContent='Dedicated LP: aim for 4–8% conversion rate';}
+  else{hint.textContent='Service page: typically 2–4% conversion rate';}
+  document.getElementById('cvr-out').textContent=cvr.value+'%';
+  calc();
+}
+
+// ── CALC ──────────────────────────────────────────────────────────────
+function fmt(n){if(isNaN(n)||!isFinite(n))return'—';return'£'+Math.round(n).toLocaleString('en-GB');}
+function fmtn(n){if(isNaN(n)||!isFinite(n))return'—';return Math.round(n).toLocaleString('en-GB');}
+
+function calc(){
+  var cn=document.getElementById('client-name');
+  if(cn)document.getElementById('r-clientname').textContent=cn.value||'New Assessment';
+
+  var setup=parseFloat(document.getElementById('setup').value)||895;
+  var mgmt=parseFloat(document.getElementById('mgmt').value)||1200;
+  var budget=parseFloat(document.getElementById('budget').value)||1000;
+  var volume=parseFloat(document.getElementById('volume').value)||0;
+  var cpc=parseFloat(document.getElementById('cpc').value)||1;
+  var qs=parseInt(document.getElementById('qs').value)||6;
+  var lpVal=document.getElementById('lp').value;
+  var ctr=parseFloat(document.getElementById('ctr').value)||4;
+  var cvr=parseFloat(document.getElementById('cvr').value)||3;
+  var brandsplit=parseFloat(document.getElementById('brandsplit').value)||20;
+  var aov=parseFloat(document.getElementById('aov').value)||0;
+  var close=parseFloat(document.getElementById('close').value)||30;
+  var targetCpl=parseFloat(document.getElementById('target-cpl').value)||0;
+
+  document.getElementById('qs-out').textContent=qs+' / 10';
+  document.getElementById('ctr-out').textContent=ctr+'%';
+  document.getElementById('cvr-out').textContent=cvr+'%';
+  document.getElementById('brand-out').textContent=brandsplit+'% brand';
+
+  var qsHints=['','Very low — high CPCs, poor ad rank','Low — hurts impression share','Below average','Slightly below average','Average','Average — no significant CPC impact','Good — modest CPC advantage','Good — moderate CPC savings','Excellent — strong CPC advantage','Excellent — maximum efficiency'];
+  document.getElementById('qs-hint').textContent=qsHints[qs];
+
+  var qsMod=qs<4?1.4:qs<6?1.15:qs<8?1:qs<9?0.9:0.8;
+  var brandFrac=brandsplit/100;
+  var blendedCpc=((brandFrac*cpc*0.4)+((1-brandFrac)*cpc))*qsMod;
+  var adjVolume=Math.round(volume*geoMod);
+  var clicksFromVolume=Math.round(adjVolume*(ctr/100));
+  var clicksFromBudget=Math.round(budget/blendedCpc);
+  var effectiveClicks=Math.min(clicksFromVolume,clicksFromBudget);
+  var leads=Math.round(effectiveClicks*(cvr/100));
+  var totalOutlay=mgmt+budget+(setup/12);
+  var revPotential=leads*(close/100)*aov;
+  var cpl=leads>0?totalOutlay/leads:Infinity;
+  var netReturn=revPotential-totalOutlay;
+  var roi=totalOutlay>0?((netReturn/totalOutlay)*100):0;
+  var breakEven=totalOutlay>0&&aov>0&&(close/100)>0?Math.ceil(totalOutlay/(aov*(close/100))):0;
+  var paybackMonths=(revPotential-mgmt-budget)>0?(setup/(revPotential-mgmt-budget)):null;
+
+  document.getElementById('b-budget').textContent=fmt(budget);
+  document.getElementById('b-mgmt').textContent=fmt(mgmt);
+  document.getElementById('b-setup').textContent=fmt(setup/12);
+  document.getElementById('b-total').textContent=fmt(totalOutlay);
+  document.getElementById('b-net').textContent=fmt(netReturn);
+  document.getElementById('b-vol').textContent=fmtn(adjVolume);
+  document.getElementById('b-cpc').textContent='£'+blendedCpc.toFixed(2);
+  document.getElementById('b-clicks-b').textContent=fmtn(clicksFromBudget);
+  document.getElementById('b-clicks-v').textContent=fmtn(clicksFromVolume);
+  document.getElementById('b-eff').textContent=fmtn(effectiveClicks)+(clicksFromBudget<clicksFromVolume?' (budget-limited)':' (volume-limited)');
+  document.getElementById('r-clicks').textContent=fmtn(effectiveClicks);
+  document.getElementById('r-leads').textContent=fmtn(leads);
+  document.getElementById('r-cpl').textContent=isFinite(cpl)?fmt(cpl):'N/A';
+  document.getElementById('r-rev').textContent=fmt(revPotential);
+  document.getElementById('r-roi').textContent=isFinite(roi)?Math.round(roi)+'%':'N/A';
+  document.getElementById('r-breakeven').textContent=breakEven>0?breakEven+'/mo':'N/A';
+  document.getElementById('r-payback').textContent=paybackMonths&&paybackMonths>0&&paybackMonths<120?paybackMonths.toFixed(1)+' mo':'N/A';
+  document.getElementById('r-cpltarget').textContent=isFinite(cpl)&&targetCpl>0?(cpl<=targetCpl?'Within target':'Over by £'+Math.round(cpl-targetCpl)):'N/A';
+  document.getElementById('total-outlay').value=Math.round(totalOutlay);
+  document.getElementById('budget-hint').textContent=budget<700?'Below £700 — may not generate enough clicks':'';
+
+  // FLAGS
+  var flags=[];
+  if(volume<500)flags.push({t:'bad',msg:'Search volume is very low ('+fmtn(adjVolume)+' adjusted). Not enough demand to justify paid search at this time.'});
+  if(clicksFromBudget<clicksFromVolume)flags.push({t:'warn',msg:'Budget-limited — volume supports '+fmtn(clicksFromVolume)+' clicks but budget only buys '+fmtn(clicksFromBudget)+'. More spend = more leads here.'});
+  else flags.push({t:'warn',msg:'Volume-limited — budget buys more clicks than the market can deliver. Increasing spend won\'t help; market is the ceiling.'});
+  if(qs<5)flags.push({t:'bad',msg:'Quality Score '+qs+'/10 will inflate CPCs significantly. Landing page and ad copy work is essential before launch.'});
+  if(lpVal==='homepage')flags.push({t:'bad',msg:'Homepage targeting will likely kill conversion rate. A dedicated landing page should be built before launch.'});
+  if(lpVal==='dedicated')flags.push({t:'warn',msg:'Dedicated landing page needed — factor build cost and timeline into the proposal.'});
+  if(competitors.length>=3)flags.push({t:'warn',msg:'Multiple competitors identified ('+competitors.join(', ')+'). Expect pressure on impression share and CPCs.'});
+  if(isFinite(cpl)&&targetCpl>0&&cpl>targetCpl)flags.push({t:'bad',msg:'Estimated CPL ('+fmt(cpl)+') exceeds client target of '+fmt(targetCpl)+'. Numbers don\'t stack at current budget and conversion rate.'});
+  if(leads<3)flags.push({t:'bad',msg:'Fewer than 3 leads projected per month. Insufficient volume to justify ongoing management overhead.'});
+  if(budget<700)flags.push({t:'bad',msg:'Budget below £700/mo. After CPC costs, click volume will be too low for meaningful data or consistent leads.'});
+  if(auditData.hasTracking===false)flags.push({t:'warn',msg:'No tracking detected on the website. Conversion data will be limited. Recommend GA4 and GTM setup as part of onboarding.'});
+  if(auditData.lpScore&&auditData.lpScore<40)flags.push({t:'bad',msg:'Website audit scored poorly ('+auditData.lpScore+'%). Site is not ready to receive paid traffic without pre-work.'});
+  if(roi>100&&leads>=3)flags.push({t:'good',msg:'Strong ROI potential ('+Math.round(roi)+'%). Numbers support a confident recommendation.'});
+  if(leads>=5&&isFinite(cpl)&&(!targetCpl||cpl<=targetCpl))flags.push({t:'good',msg:'Lead volume and CPL look solid. Good candidate for PPC.'});
+
+  var fl=document.getElementById('flag-list');
+  fl.innerHTML='';
+  flags.forEach(function(f){
+    var d=document.createElement('div');
+    d.className='flag '+f.t;
+    d.innerHTML='<div class="flag-dot"></div><span>'+f.msg+'</span>';
+    fl.appendChild(d);
+  });
+
+  // WHAT WOULD IT TAKE
+  var isViable=leads>=3&&isFinite(cpl)&&(targetCpl===0||cpl<=targetCpl*1.3)&&roi>30&&volume>=300;
+  var isMarginal=leads>=2&&roi>0&&volume>=200;
+  var flipPanel=document.getElementById('flip-panel');
+  var flipItems=document.getElementById('flip-items');
+
+  if(!isViable&&(volume>0||budget>0)){
+    flipPanel.style.display='block';
+    var items=[];
+    if(leads<3){
+      var neededClicks=Math.ceil(3/(cvr/100));
+      var neededBudget=Math.ceil(neededClicks*blendedCpc);
+      if(neededBudget>budget)items.push('Increase budget to <span class="flip-val">'+fmt(neededBudget)+'</span>/mo to generate at least 3 leads');
+      var neededCvr=volume>0?((3/Math.min(clicksFromBudget,clicksFromVolume))*100):null;
+      if(neededCvr&&neededCvr<=10&&neededCvr>cvr)items.push('Improve conversion rate to <span class="flip-val">'+neededCvr.toFixed(1)+'%</span> (requires dedicated landing page)');
+    }
+    if(isFinite(cpl)&&targetCpl>0&&cpl>targetCpl){
+      var neededLeads=Math.ceil(totalOutlay/targetCpl);
+      items.push('Generate at least <span class="flip-val">'+neededLeads+' leads/mo</span> to hit target CPL of '+fmt(targetCpl));
+    }
+    if(volume<500)items.push('Reconsider targeting — current search volume (<span class="flip-val">'+fmtn(adjVolume)+'</span> adjusted) is too low for viable campaigns');
+    if(items.length===0)items.push('Numbers are close — a small increase in budget or conversion rate could tip this into viable territory');
+    flipItems.innerHTML=items.map(function(i){return'<div class="flip-item">'+i+'</div>';}).join('');
+  } else {
+    flipPanel.style.display='none';
+  }
+
+  // VERDICT
+  var verdict,vclass;
+  if(volume===0&&budget===0){verdict='Enter data above';vclass='verdict-na';}
+  else if(isViable){verdict='Green — viable';vclass='verdict-green';}
+  else if(isMarginal){verdict='Amber — marginal';vclass='verdict-amber';}
+  else{verdict='Red — not viable';vclass='verdict-red';}
+  var vb=document.getElementById('verdict-badge');
+  vb.textContent=verdict;vb.className='verdict-badge '+vclass;
+
+  return{leads:leads,cpl:isFinite(cpl)?Math.round(cpl):null,roi:Math.round(roi),rev:Math.round(revPotential),verdict:verdict,vclass:vclass};
+}
+
+// ── SAVE / HISTORY ────────────────────────────────────────────────────
+function saveAssessment(){
+  var result=calc();
+  var name=document.getElementById('client-name').value||'Unnamed client';
+  var entry={
+    id:Date.now(),
+    name:name,
+    date:new Date().toLocaleDateString('en-GB'),
+    verdict:result.verdict,
+    vclass:result.vclass,
+    leads:result.leads,
+    cpl:result.cpl,
+    roi:result.roi,
+    rev:result.rev,
+    budget:document.getElementById('budget').value,
+    mgmt:document.getElementById('mgmt').value
+  };
+  var history=JSON.parse(localStorage.getItem('dms_ppc_history')||'[]');
+  history.unshift(entry);
+  if(history.length>50)history=history.slice(0,50);
+  localStorage.setItem('dms_ppc_history',JSON.stringify(history));
+  renderHistory();
+  var btn=document.querySelector('.btn-accent');
+  var orig=btn.textContent;
+  btn.textContent='Saved!';
+  setTimeout(function(){btn.textContent=orig;},1500);
+}
+
+function renderHistory(){
+  var list=document.getElementById('history-list');
+  if(!list)return;
+  var history=JSON.parse(localStorage.getItem('dms_ppc_history')||'[]');
+  if(history.length===0){list.innerHTML='<div class="history-empty">No saved assessments yet. Fill in the form and click Save Assessment.</div>';return;}
+  list.innerHTML='';
+  history.forEach(function(e,i){
+    var d=document.createElement('div');
+    d.className='history-item';
+    d.innerHTML='<div><div class="history-name">'+e.name+'</div><div class="history-meta">'+e.date+' &middot; Budget £'+e.budget+'/mo &middot; '+e.leads+' leads &middot; CPL '+( e.cpl?'£'+e.cpl:'N/A')+'</div></div>'
+      +'<span class="verdict-badge '+e.vclass+'" style="flex-shrink:0">'+e.verdict+'</span>'
+      +'<div class="history-actions"><button class="btn-sm danger" onclick="deleteHistory('+i+')">Delete</button></div>';
+    list.appendChild(d);
+  });
+}
+
+function deleteHistory(i){
+  var history=JSON.parse(localStorage.getItem('dms_ppc_history')||'[]');
+  history.splice(i,1);
+  localStorage.setItem('dms_ppc_history',JSON.stringify(history));
+  renderHistory();
+}
+
+function clearHistory(){
+  if(confirm('Clear all saved assessments?')){localStorage.removeItem('dms_ppc_history');renderHistory();}
+}
+
+function clearAll(){
+  if(confirm('Clear all fields?')){
+    document.querySelectorAll('input[type=number],input[type=text]').forEach(function(el){
+      if(!el.readOnly)el.value='';
+    });
+    competitors=[];auditData={};
+    document.getElementById('comp-tags').innerHTML='';
+    document.getElementById('audit-results').style.display='none';
+    document.getElementById('setup').value=895;
+    document.getElementById('mgmt').value=1200;
+    document.getElementById('budget').value=1000;
+    document.getElementById('volume').value=2000;
+    document.getElementById('cpc').value=2.50;
+    document.getElementById('qs').value=6;
+    document.getElementById('cvr').value=3;
+    document.getElementById('ctr').value=4;
+    document.getElementById('brandsplit').value=20;
+    document.getElementById('close').value=30;
+    document.getElementById('target-cpl').value=80;
+    document.getElementById('aov').value=1500;
+    callAnswers={};callStep=0;
+    initCallMode();
+    calc();
+  }
+}
+</script>
+</body>
+</html>
